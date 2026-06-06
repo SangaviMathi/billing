@@ -409,49 +409,15 @@ tr:hover td{background:#FAFAF7}
       <button class="btn-primary" onclick="openAddFee()">+ Add fee head</button>
     </div>
   </div>
-      <div class="card">
-      <div class="tbl-wrap">
-        <table>
-          <thead><tr><th>Class Group</th><th>Term</th><th>Tuition</th><th>Transport</th><th>Lab</th><th>Activity</th><th>Total</th><th>Actions</th></tr></thead>
-          <tbody id="fees-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-        <div class="fee-row"><span class="fee-row-label">Tuition fee</span><span class="fee-row-val">₹1,800</span></div>
-        <div class="fee-row"><span class="fee-row-label">Transport</span><span class="fee-row-val">₹600</span></div>
-        <div class="fee-row"><span class="fee-row-label">Activity</span><span class="fee-row-val">₹200</span></div>
-        <div class="fee-total"><span>Term 1 total</span><span class="fee-total-val">₹2,600</span></div>
-      </div>
-      <div class="fee-class-card">
-        <div class="fee-class-head"><div class="fee-class-name">Class 1 – 5</div></div>
-        <div class="fee-row"><span class="fee-row-label">Tuition fee</span><span class="fee-row-val">₹2,400</span></div>
-        <div class="fee-row"><span class="fee-row-label">Transport</span><span class="fee-row-val">₹700</span></div>
-        <div class="fee-row"><span class="fee-row-label">Lab / Library</span><span class="fee-row-val">₹300</span></div>
-        <div class="fee-total"><span>Term 1 total</span><span class="fee-total-val">₹3,400</span></div>
-      </div>
-      <div class="fee-class-card">
-        <div class="fee-class-head"><div class="fee-class-name">Class 6 – 8</div></div>
-        <div class="fee-row"><span class="fee-row-label">Tuition fee</span><span class="fee-row-val">₹3,200</span></div>
-        <div class="fee-row"><span class="fee-row-label">Transport</span><span class="fee-row-val">₹700</span></div>
-        <div class="fee-row"><span class="fee-row-label">Lab fee</span><span class="fee-row-val">₹400</span></div>
-        <div class="fee-total"><span>Term 1 total</span><span class="fee-total-val">₹4,300</span></div>
-      </div>
-      <div class="fee-class-card">
-        <div class="fee-class-head"><div class="fee-class-name">Class 9 – 10</div></div>
-        <div class="fee-row"><span class="fee-row-label">Tuition fee</span><span class="fee-row-val">₹4,000</span></div>
-        <div class="fee-row"><span class="fee-row-label">Transport</span><span class="fee-row-val">₹700</span></div>
-        <div class="fee-row"><span class="fee-row-label">Lab fee</span><span class="fee-row-val">₹600</span></div>
-        <div class="fee-total"><span>Term 1 total</span><span class="fee-total-val">₹5,300</span></div>
-      </div>
-      <div class="fee-class-card">
-        <div class="fee-class-head"><div class="fee-class-name">Class 11 – 12</div></div>
-        <div class="fee-row"><span class="fee-row-label">Tuition fee</span><span class="fee-row-val">₹5,200</span></div>
-        <div class="fee-row"><span class="fee-row-label">Transport</span><span class="fee-row-val">₹700</span></div>
-        <div class="fee-row"><span class="fee-row-label">Lab / Practical</span><span class="fee-row-val">₹800</span></div>
-        <div class="fee-total"><span>Term 1 total</span><span class="fee-total-val">₹6,700</span></div>
-      </div>
+  <div class="card">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Class</th><th>Term</th><th>Tuition</th><th>Transport</th><th>Lab</th><th>Activity</th><th>Total</th><th>Actions</th></tr></thead>
+        <tbody id="fees-tbody"></tbody>
+      </table>
     </div>
   </div>
+  <div id="fee-cards-container" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:6px"></div>
 </div>
 
 <!-- STUDENTS -->
@@ -1081,24 +1047,48 @@ function renderFees(){
   if(!tbody) return;
   var term = document.getElementById('fee-term-sel') ? document.getElementById('fee-term-sel').value : 'Term 1';
   var rows = DB.fees.filter(function(f){ return f.term === term; });
+
+  // ── Table rows ──
   if(rows.length === 0){
     tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No fee structure for ' + term + '. Click + Add Fee.</td></tr>';
+  } else {
+    tbody.innerHTML = rows.map(function(f){ return (
+      '<tr>' +
+      '<td><strong>'+ f.cls +'</strong></td>' +
+      '<td>'+ f.term +'</td>' +
+      '<td>₹'+ f.tuition.toLocaleString('en-IN') +'</td>' +
+      '<td>₹'+ f.transport.toLocaleString('en-IN') +'</td>' +
+      '<td>₹'+ f.lab.toLocaleString('en-IN') +'</td>' +
+      '<td>₹'+ f.activity.toLocaleString('en-IN') +'</td>' +
+      '<td><strong>₹'+ f.total.toLocaleString('en-IN') +'</strong></td>' +
+      '<td>' +
+        '<button class="tbl-edit" onclick="editFee('+ f.id +')">✏ Edit</button>' +
+        '<button class="tbl-del"  onclick="deleteFee('+ f.id +')">🗑 Delete</button>' +
+      '</td></tr>'
+    );}).join('');
+  }
+
+  // ── Fee cards (one card per individual class) ──
+  var container = document.getElementById('fee-cards-container');
+  if(!container) return;
+  if(rows.length === 0){
+    container.innerHTML = '<p style="color:var(--muted);font-size:13px">No fees added for ' + term + ' yet.</p>';
     return;
   }
-  tbody.innerHTML = rows.map(function(f){ return (
-    '<tr>' +
-    '<td><strong>'+ f.cls +'</strong></td>' +
-    '<td>'+ f.term +'</td>' +
-    '<td>₹'+ f.tuition.toLocaleString('en-IN') +'</td>' +
-    '<td>₹'+ f.transport.toLocaleString('en-IN') +'</td>' +
-    '<td>₹'+ f.lab.toLocaleString('en-IN') +'</td>' +
-    '<td>₹'+ f.activity.toLocaleString('en-IN') +'</td>' +
-    '<td><strong>₹'+ f.total.toLocaleString('en-IN') +'</strong></td>' +
-    '<td>' +
-      '<button class="tbl-edit" onclick="editFee('+ f.id +')">✏ Edit</button>' +
-      '<button class="tbl-del"  onclick="deleteFee('+ f.id +')">🗑 Delete</button>' +
-    '</td></tr>'
-  );}).join('');
+  container.innerHTML = rows.map(function(f){
+    var lines = '';
+    if(f.tuition)   lines += '<div class="fee-row"><span class="fee-row-label">Tuition fee</span><span class="fee-row-val">₹'+ f.tuition.toLocaleString('en-IN') +'</span></div>';
+    if(f.transport) lines += '<div class="fee-row"><span class="fee-row-label">Transport</span><span class="fee-row-val">₹'+ f.transport.toLocaleString('en-IN') +'</span></div>';
+    if(f.lab)       lines += '<div class="fee-row"><span class="fee-row-label">Lab fee</span><span class="fee-row-val">₹'+ f.lab.toLocaleString('en-IN') +'</span></div>';
+    if(f.activity)  lines += '<div class="fee-row"><span class="fee-row-label">Activity</span><span class="fee-row-val">₹'+ f.activity.toLocaleString('en-IN') +'</span></div>';
+    return (
+      '<div class="fee-class-card">' +
+        '<div class="fee-class-head"><div class="fee-class-name">'+ f.cls +'</div></div>' +
+        lines +
+        '<div class="fee-total"><span>'+ f.term +' total</span><span class="fee-total-val">₹'+ f.total.toLocaleString('en-IN') +'</span></div>' +
+      '</div>'
+    );
+  }).join('');
 }
 
 function openAddFee(){
